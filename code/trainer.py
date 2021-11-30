@@ -64,8 +64,8 @@ class condGANTrainer(object):
         if cfg.TRAIN.NET_E == '':
             print('Error: no pretrained text-image encoders')
             return
-
-        image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
+        # 图片编码，但是用在哪里了？论文中没提啊。
+        image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM) 
         img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
         state_dict = \
             torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
@@ -74,7 +74,7 @@ class condGANTrainer(object):
             p.requires_grad = False
         print('Load image encoder from:', img_encoder_path)
         image_encoder.eval()
-
+        # 文字编码
         text_encoder = \
             RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
         state_dict = \
@@ -88,7 +88,7 @@ class condGANTrainer(object):
 
         # #######################generator and discriminators############## #
         netsD = []
-        if cfg.GAN.B_DCGAN:
+        if cfg.GAN.B_DCGAN: # 这条分支进不来
             if cfg.TREE.BRANCH_NUM ==1:
                 from model import D_NET64 as D_NET
             elif cfg.TREE.BRANCH_NUM == 2:
@@ -112,15 +112,15 @@ class condGANTrainer(object):
         print('number of trainable parameters =', count_parameters(netG))
         print('number of trainable parameters =', count_parameters(netsD[-1]))
 
-        netG.apply(weights_init)
+        netG.apply(weights_init) # 初始化G网络全重
         # print(netG)
         for i in range(len(netsD)):
-            netsD[i].apply(weights_init)
+            netsD[i].apply(weights_init) # 初始化D网络全重
             # print(netsD[i])
         print('# of netsD', len(netsD))
         #
         epoch = 0
-        if cfg.TRAIN.NET_G != '':
+        if cfg.TRAIN.NET_G != '': # 载入已有的G模型
             state_dict = \
                 torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict)
@@ -242,8 +242,8 @@ class condGANTrainer(object):
 
         batch_size = self.batch_size
         nz = cfg.GAN.Z_DIM
-        noise = Variable(torch.FloatTensor(batch_size, nz))
-        fixed_noise = Variable(torch.FloatTensor(batch_size, nz).normal_(0, 1))
+        noise = torch.FloatTensor(batch_size, nz)
+        fixed_noise = torch.FloatTensor(batch_size, nz).normal_(0, 1)
         if cfg.CUDA:
             noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
 
@@ -251,7 +251,6 @@ class condGANTrainer(object):
         # gen_iterations = start_epoch * self.num_batches
         for epoch in range(start_epoch, self.max_epoch):
             start_t = time.time()
-
             data_iter = iter(self.data_loader)
             step = 0
             while step < self.num_batches:
@@ -278,7 +277,7 @@ class condGANTrainer(object):
                 # (2) Generate fake images
                 ######################################################
                 noise.data.normal_(0, 1)
-                fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, cap_lens)
+                fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask, cap_lens) # 研究下是如何生成图片的
 
                 #######################################################
                 # (3) Update D network
@@ -316,7 +315,7 @@ class condGANTrainer(object):
                 errG_total.backward()
                 optimizerG.step()
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
-                    avg_p.mul_(0.999).add_(0.001, p.data)
+                    avg_p.mul_(0.999).add_(0.001, p.data) # 滑动平均
 
                 if gen_iterations % 100 == 0:
                     print('Epoch [{}/{}] Step [{}/{}]'.format(epoch, self.max_epoch, step,

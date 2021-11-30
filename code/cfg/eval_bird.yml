@@ -20,8 +20,8 @@ TRAIN:
 
 GAN:
     DF_DIM: 32
-    GF_DIM: 64
-    Z_DIM: 100
+    GF_DIM: 64 # Dimension of gen filters in first conv layer
+    Z_DIM: 100 # # Demesion of noise vector z for generator input
     R_NUM: 2
 
 TEXT:

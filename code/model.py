@@ -264,7 +264,8 @@ class CNN_ENCODER(nn.Module):
 
 
 # ############## G networks ###################
-class CA_NET(nn.Module):
+class CA_NET(nn.Module): 
+    # 变分自动编码机
     # some code is modified from vae examples
     # (https://github.com/pytorch/examples/blob/master/vae/main.py)
     def __init__(self):
@@ -272,7 +273,7 @@ class CA_NET(nn.Module):
         self.t_dim = cfg.TEXT.EMBEDDING_DIM
         self.c_dim = cfg.GAN.CONDITION_DIM
         self.fc = nn.Linear(self.t_dim, self.c_dim * 4, bias=True)
-        self.relu = GLU()
+        self.relu = GLU() # relu和sigmoid的结合
 
     def encode(self, text_embedding):
         x = self.relu(self.fc(text_embedding))
@@ -287,7 +288,7 @@ class CA_NET(nn.Module):
         else:
             eps = torch.FloatTensor(std.size()).normal_()
         eps = Variable(eps)
-        return eps.mul(std).add_(mu)
+        return eps.mul(std).add_(mu) # eps * std + mu
 
     def forward(self, text_embedding):
         mu, logvar = self.encode(text_embedding)
@@ -488,7 +489,7 @@ class G_NET(nn.Module):
         ncf = cfg.GAN.CONDITION_DIM
         self.ca_net = CA_NET()
 
-        if cfg.TREE.BRANCH_NUM > 0:
+        if cfg.TREE.BRANCH_NUM > 0: # BRANCH_NUM 似乎是用来设置分支数量的，但有什么意义吗？
             self.h_net1 = INIT_STAGE_G(ngf * 16, ncf)
             self.img_net1 = GET_IMAGE_G(ngf)
         # gf x 64 x 64
